@@ -1,31 +1,55 @@
 import styled from "styled-components";
+import { useState, ChangeEvent } from "react";
 import { useDrag } from 'react-dnd';
+import { AiFillDelete } from 'react-icons/ai';
 
-interface StyledStickyNoteProps {
+export interface StyledStickyNoteProps {
   id: string;
-  left: number;
-  top: number;
+  text: string;
+  position: {
+    left: number;
+    top: number;
+  };
+  onDelete: (id: string) => void;
 };
 
 const StyledStickyNote = styled.div`
   box-sizing: border-box;
-  padding: 20px 10px 10px 10px;
+  position: absolute;
+  padding: 15px;
   background-color: #8aaee8;
   height: 270px;
   width: 200px;
   box-shadow: rgba(0, 0, 0, 0.25) 0px 14px 28px, rgba(0, 0, 0, 0.22) 0px 10px 10px;
-  position: absolute;
-  left: ${(props: Omit<StyledStickyNoteProps, "id">) => props.left}px;
-  top: ${(props: Omit<StyledStickyNoteProps, "id">) => props.top}px;
+  left: ${(props: Pick<StyledStickyNoteProps, "position">) => props.position.left}px;
+  top: ${(props: Pick<StyledStickyNoteProps, "position">) => props.position.top}px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+
+  &:before {
+    content: "";
+    background-image: url(${process.env.PUBLIC_URL + '/pin.png'});
+    background-size: cover;
+    width: 30px;
+    height: 30px;
+    position: absolute;
+    top: -15px;
+    left: 85px;
+  }
 `;
-const StyledPin = styled.img`
-  width: 120px;
-  height: 62px;
-  position: absolute;
-  left: 30px;
-  top: -25px;
+const DeleteButton = styled.button`
+  border: 0;
+  border-radius: 50%;
+  padding: 10px;
+  background-color: transparent;
+  cursor: pointer;
+
+  &:hover {
+    background-color: rgba(96, 96, 96, 0.1);
+  }
 `;
-const StyledTextArea = styled.textarea`
+const TextArea = styled.textarea`
   box-sizing: border-box;
   background-color: inherit;
   border: none;
@@ -37,24 +61,40 @@ const StyledTextArea = styled.textarea`
   }
 `;
 
-export const StickyNote = ({ id, left, top }: StyledStickyNoteProps) => {
+export const StickyNote = ({
+  id,
+  text,
+  position,
+  onDelete
+}: StyledStickyNoteProps) => {
+  const [inputValue, setInputValue] = useState(text);
   const [, drag] = useDrag({
     type: 'note',
-    item: { id }
+    item: () => ({ id, text: inputValue })
   });
+  const handleTextAreaChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+    setInputValue(e.target.value);
+  };
+  const handleTextAreFocus = (e: ChangeEvent<HTMLTextAreaElement>) => {
+    e.target.value = '';
+    e.target.value = inputValue;
+  }; // This is necessary to initialize the cursor at the end of the input when moving the note
 
   return (
     <StyledStickyNote
-      left={left}
-      top={top}
+      position={position}
       ref={drag}
     >
-      <StyledPin
-        src={process.env.PUBLIC_URL + "/pin.png"}
-        alt="pin"
-        draggable="false"
+      <DeleteButton onClick={() => onDelete(id)}>
+        <AiFillDelete color="rgb(96,96,96)" size="1.3em" />
+      </DeleteButton>
+      <TextArea
+        value={inputValue}
+        maxLength={273}
+        onChange={handleTextAreaChange}
+        onFocus={handleTextAreFocus}
+        autoFocus
       />
-      <StyledTextArea maxLength={315} />
     </StyledStickyNote>
   );
 };
