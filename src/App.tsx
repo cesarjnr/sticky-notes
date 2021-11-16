@@ -5,12 +5,10 @@ import { DropTargetMonitor, useDrop } from 'react-dnd';
 import { StickyNote, StyledStickyNoteProps } from './components/StickyNote';
 
 type StickyNoteListItem = Omit<StyledStickyNoteProps, "onDelete">;
-
 interface StickyNoteDragItem {
   id: string;
   text: string;
 };
-
 interface StyledAppProps {
   width: number;
   height: number;
@@ -116,6 +114,8 @@ export const App = () => {
   };
   const handleClearButtonClick = () => {
     setStickyNotes([]);
+    setCanvasWidth(window.innerWidth);
+    setCanvasHeight(window.innerHeight);
   };
 
   return (
