@@ -12,6 +12,7 @@
     "@types/react-dom": "^17.0.0",
     "@types/styled-components": "^5.1.15",
     "react": "^17.0.2",
+    "react-colorful": "^5.5.1",
     "react-dnd": "^14.0.4",
     "react-dnd-html5-backend": "^14.0.2",
     "react-dom": "^17.0.2",

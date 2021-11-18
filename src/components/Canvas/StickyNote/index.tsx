@@ -2,8 +2,10 @@ import styled from "styled-components";
 import { useState, ChangeEvent } from "react";
 import { useDrag } from 'react-dnd';
 import { AiFillDelete } from 'react-icons/ai';
+import { CgColorPicker } from 'react-icons/cg';
+import { HexColorPicker } from "react-colorful";
 
-export interface StyledStickyNoteProps {
+export interface StickyNoteProps {
   id: string;
   text: string;
   position: {
@@ -11,21 +13,25 @@ export interface StyledStickyNoteProps {
     top: number;
   };
   onDelete: (id: string) => void;
+  backgroundColor?: string;
+};
+type StyledStickyNoteProps = Pick<StickyNoteProps, "position"> & {
+  backgroundColor: string;
 };
 
 const StyledStickyNote = styled.div`
   box-sizing: border-box;
   position: absolute;
   padding: 15px;
-  background-color: #8aaee8;
-  height: 270px;
-  width: 200px;
+  width: 230px;
+  height: 300px;
   box-shadow: rgba(0, 0, 0, 0.25) 0px 14px 28px, rgba(0, 0, 0, 0.22) 0px 10px 10px;
-  left: ${(props: Pick<StyledStickyNoteProps, "position">) => props.position.left}px;
-  top: ${(props: Pick<StyledStickyNoteProps, "position">) => props.position.top}px;
+  background-color: ${(props: StyledStickyNoteProps) => props.backgroundColor};
+  left: ${(props: StyledStickyNoteProps) => props.position.left}px;
+  top: ${(props: StyledStickyNoteProps) => props.position.top}px;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  gap: 5px;
 
   &:before {
     content: "";
@@ -35,10 +41,15 @@ const StyledStickyNote = styled.div`
     height: 30px;
     position: absolute;
     top: -15px;
-    left: 85px;
+    left: 100px;
   }
 `;
-const DeleteButton = styled.button`
+const Menu = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  border-bottom: 1px solid rgb(96,96,96);
+`;
+const ButtonIcon = styled.button`
   border: 0;
   border-radius: 50%;
   padding: 10px;
@@ -60,17 +71,26 @@ const TextArea = styled.textarea`
     outline: 0;
   }
 `;
+export const STICKY_NOTE_WIDTH = 230;
+export const STICKY_NOTE_HEIGHT = 300;
 
 export const StickyNote = ({
   id,
   text,
   position,
-  onDelete
-}: StyledStickyNoteProps) => {
+  onDelete,
+  backgroundColor
+}: StickyNoteProps) => {
   const [inputValue, setInputValue] = useState(text);
+  const [showColorPicker, setShowColorPicker] = useState(false);
+  const [selectedBackgroundColor, setSelectedBackgroundColor] = useState(backgroundColor || '#8aaee8');
   const [, drag] = useDrag({
     type: 'note',
-    item: () => ({ id, text: inputValue })
+    item: () => ({
+      id,
+      text: inputValue,
+      backgroundColor: selectedBackgroundColor
+    })
   });
   const handleTextAreaChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
     setInputValue(e.target.value);
@@ -79,22 +99,40 @@ export const StickyNote = ({
     e.target.value = '';
     e.target.value = inputValue;
   }; // This is necessary to initialize the cursor at the end of the input when moving the note
+  const handleColorPickerChange = (newColor: string) => {
+    setSelectedBackgroundColor(newColor);
+    setShowColorPicker(!showColorPicker);
+  };
 
   return (
     <StyledStickyNote
       position={position}
+      backgroundColor={selectedBackgroundColor}
       ref={drag}
     >
-      <DeleteButton onClick={() => onDelete(id)}>
-        <AiFillDelete color="rgb(96,96,96)" size="1.3em" />
-      </DeleteButton>
+      <Menu>
+        <ButtonIcon onClick={() => setShowColorPicker(!showColorPicker)}>
+          <CgColorPicker color="rgb(96,96,96)" size="1.3em" />
+        </ButtonIcon>
+        <ButtonIcon onClick={() => onDelete(id)}>
+          <AiFillDelete color="rgb(96,96,96)" size="1.3em" />
+        </ButtonIcon>
+      </Menu>
+
       <TextArea
         value={inputValue}
-        maxLength={273}
+        maxLength={336}
         onChange={handleTextAreaChange}
         onFocus={handleTextAreFocus}
         autoFocus
       />
+
+      {showColorPicker && (
+        <HexColorPicker
+          color={selectedBackgroundColor}
+          onChange={handleColorPickerChange}
+        />
+      )}
     </StyledStickyNote>
   );
 };
