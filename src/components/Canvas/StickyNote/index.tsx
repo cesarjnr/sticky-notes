@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import { useState, ChangeEvent } from "react";
+import { useState, ChangeEvent, useEffect } from "react";
 import { useDrag } from 'react-dnd';
 import { AiFillDelete } from 'react-icons/ai';
 import { CgColorPicker } from 'react-icons/cg';
@@ -9,15 +9,21 @@ export interface StickyNoteProps {
   id: string;
   text: string;
   position: {
-    left: number;
-    top: number;
+    x: number;
+    y: number;
   };
   onDelete: (id: string) => void;
+  backgroundColor?: string;
+};
+export type StickyNoteListItem = Omit<StickyNoteProps, "onDelete"> & {
   backgroundColor?: string;
 };
 type StyledStickyNoteProps = Pick<StickyNoteProps, "position"> & {
   backgroundColor: string;
 };
+
+export const STICKY_NOTE_WIDTH = 230;
+export const STICKY_NOTE_HEIGHT = 300;
 
 const StyledStickyNote = styled.div`
   box-sizing: border-box;
@@ -27,8 +33,8 @@ const StyledStickyNote = styled.div`
   height: 300px;
   box-shadow: rgba(0, 0, 0, 0.25) 0px 14px 28px, rgba(0, 0, 0, 0.22) 0px 10px 10px;
   background-color: ${(props: StyledStickyNoteProps) => props.backgroundColor};
-  left: ${(props: StyledStickyNoteProps) => props.position.left}px;
-  top: ${(props: StyledStickyNoteProps) => props.position.top}px;
+  left: ${(props: StyledStickyNoteProps) => props.position.x}px;
+  top: ${(props: StyledStickyNoteProps) => props.position.y}px;
   display: flex;
   flex-direction: column;
   gap: 5px;
@@ -71,8 +77,6 @@ const TextArea = styled.textarea`
     outline: 0;
   }
 `;
-export const STICKY_NOTE_WIDTH = 230;
-export const STICKY_NOTE_HEIGHT = 300;
 
 export const StickyNote = ({
   id,
@@ -103,6 +107,21 @@ export const StickyNote = ({
     setSelectedBackgroundColor(newColor);
     setShowColorPicker(!showColorPicker);
   };
+
+  useEffect(() => {
+    window.addEventListener('beforeunload', () => {
+      const stickyNotes = localStorage.getItem('stickyNotes') as string;
+      const parsedStickyNotes = JSON.parse(stickyNotes) as StickyNoteListItem[];
+      const correspondingStickyNoteIndex = parsedStickyNotes.findIndex(stickyNote => stickyNote.id === id);
+  
+      if (correspondingStickyNoteIndex >= 0) {
+        parsedStickyNotes[correspondingStickyNoteIndex].text = inputValue;
+        parsedStickyNotes[correspondingStickyNoteIndex].backgroundColor = selectedBackgroundColor;
+  
+        localStorage.setItem('stickyNotes', JSON.stringify(parsedStickyNotes));
+      }
+    });
+  }, [id, inputValue, selectedBackgroundColor]);
 
   return (
     <StyledStickyNote
