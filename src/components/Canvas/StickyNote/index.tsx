@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import { useState, ChangeEvent, useEffect, useCallback } from "react";
+import { useState, ChangeEvent } from "react";
 import { useDrag } from 'react-dnd';
 import { AiFillDelete } from 'react-icons/ai';
 import { CgColorPicker } from 'react-icons/cg';
@@ -99,30 +99,10 @@ export const StickyNote = ({
   const handleTextAreaChange = (e: ChangeEvent<HTMLTextAreaElement>): void => {
     setInputValue(e.target.value);
   };
-  const handleTextAreFocus = (e: ChangeEvent<HTMLTextAreaElement>): void => {
-    e.target.value = '';
-    e.target.value = inputValue;
-  }; // This is necessary to initialize the cursor at the end of the input when moving the note
   const handleColorPickerChange = (newColor: string): void => {
     setSelectedBackgroundColor(newColor);
     setShowColorPicker(!showColorPicker);
   };
-  const persistCurrentStickyNoteState = useCallback(() => {
-    const stickyNotes = localStorage.getItem('stickyNotes') as string;
-    const parsedStickyNotes = JSON.parse(stickyNotes) as StickyNoteListItem[];
-    const correspondingStickyNoteIndex = parsedStickyNotes.findIndex(stickyNote => stickyNote.id === id);
-
-    if (correspondingStickyNoteIndex >= 0) {
-      parsedStickyNotes[correspondingStickyNoteIndex].text = inputValue;
-      parsedStickyNotes[correspondingStickyNoteIndex].backgroundColor = selectedBackgroundColor;
-
-      localStorage.setItem('stickyNotes', JSON.stringify(parsedStickyNotes));
-    }
-  }, [id, inputValue, selectedBackgroundColor]);
-
-  useEffect(() => {
-    window.addEventListener('beforeunload', persistCurrentStickyNoteState);
-  }, [persistCurrentStickyNoteState]);
 
   return (
     <StyledStickyNote
@@ -143,7 +123,6 @@ export const StickyNote = ({
         value={inputValue}
         maxLength={336}
         onChange={handleTextAreaChange}
-        onFocus={handleTextAreFocus}
         autoFocus
       />
 

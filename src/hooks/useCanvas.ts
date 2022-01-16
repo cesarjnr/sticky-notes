@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useLayoutEffect, useCallback } from 'react';
 
 interface ItemSize {
   width: number;
@@ -20,62 +20,73 @@ interface UseCanvas {
   items: CanvasItem[];
   canvasWidth: number;
   canvasHeight: number;
-  insertItemOnCanvas: (item: CanvasItem) => void,
-  removeItemFromCanvas: (id: string) => void,
-  clearCanvas: () => void
+  insertItemOnCanvas: (item: CanvasItem) => void;
+  moveItemOverCanvas: (id: string, newPosition: ItemPosition) => void;
+  removeItemFromCanvas: (id: string) => void;
+  clearCanvas: () => void;
 }
 
 export const useCanvas = (initialItems: CanvasItem[]): UseCanvas => {
-  const persistedCanvasWidth = localStorage.getItem('canvasWidth');
-  const persistedCanvasHeight = localStorage.getItem('canvasHeight');
-  const [canvasWidth, setCanvasWidth] = useState(persistedCanvasWidth ? Number(persistedCanvasWidth) : window.innerWidth);
-  const [canvasHeight, setCanvasHeight] = useState(persistedCanvasHeight ? Number(persistedCanvasHeight) : window.innerHeight);
+  const [canvasWidth, setCanvasWidth] = useState(window.innerWidth);
+  const [canvasHeight, setCanvasHeight] = useState(window.innerHeight);
   const [items, setItems] = useState<CanvasItem[]>(initialItems);
-  const expandCanvas = (itemPosition: ItemPosition, itemSize: ItemSize) => {
-    if (itemPosition.x > canvasWidth - itemSize.width) {
-      setCanvasWidth(canvasWidth + itemSize.width);
-    }
-    if (itemPosition.y > canvasHeight - itemSize.height) {
-      setCanvasHeight(canvasHeight + itemSize.height);
-    }
-  };
   const insertItemOnCanvas = (item: CanvasItem) => {
-    expandCanvas(item.position, item.size);
     setItems([...items, item]);
+  };
+  const moveItemOverCanvas = (id: string, newPosition: ItemPosition) => {
+    const itemIndex = items.findIndex(item => item.id === id);
+
+    items[itemIndex].position = newPosition;
+    setItems([...items]);
   };
   const removeItemFromCanvas = (id: string) => {
     const itemsWithoutRemovedItem = items.filter(item => item.id !== id);
-    const itemOnHighestPosition = itemsWithoutRemovedItem.reduce((previousItem, currentItem) => {
-      if (
-        currentItem.position.x > previousItem.position.x &&
-        currentItem.position.y > previousItem.position.y
-      ) {
-        return currentItem;
-      } else {
-        return previousItem;
-      }
-    });
 
     setItems(itemsWithoutRemovedItem);
-
-    if (itemOnHighestPosition.position.x < window.innerWidth) {
-      setCanvasWidth(window.innerWidth);
-    }
-    if (itemOnHighestPosition.position.y < window.innerHeight) {
-      setCanvasHeight(window.innerHeight);
-    }
   };
   const clearCanvas = () => {
     setItems([]);
-    setCanvasWidth(window.innerWidth);
-    setCanvasHeight(window.innerHeight);
   };
+  const adjustCanvasSize = useCallback(() => {
+    if (items.length) {
+      const highestPosition = items.reduce((highestPosition, currentItem) => {
+        if (currentItem.position.x > highestPosition.x) {
+          highestPosition.x = currentItem.position.x;
+        }
+  
+        if (currentItem.position.y > highestPosition.y) {
+          highestPosition.y = currentItem.position.y;
+        }
+  
+        return highestPosition;
+      }, { x: 0, y: 0 });
+
+      const itemSize = items[0].size;
+      const marginOnAdjust = 20;
+
+      if ((highestPosition.x + itemSize.width) > canvasWidth) {
+        setCanvasWidth(highestPosition.x + itemSize.width + marginOnAdjust);
+      }
+
+      if ((highestPosition.y + itemSize.height) > canvasHeight) {
+        setCanvasHeight(highestPosition.y + itemSize.height + marginOnAdjust);
+      }
+    } else {
+      setCanvasWidth(window.innerWidth);
+      setCanvasHeight(window.innerHeight);
+    }
+  }, [items, canvasWidth, canvasHeight]);
+
+  useLayoutEffect(() => {
+    adjustCanvasSize();
+  }, [adjustCanvasSize]);
 
   return {
     items,
     canvasWidth,
     canvasHeight,
     insertItemOnCanvas,
+    moveItemOverCanvas,
     removeItemFromCanvas,
     clearCanvas
   };

@@ -1,16 +1,13 @@
 import styled from 'styled-components';
-import { useEffect, MouseEvent } from 'react';
+import { MouseEvent } from 'react';
 import { DropTargetMonitor, useDrop } from 'react-dnd';
 
 import { useCanvas, CanvasItem } from '../../hooks/useCanvas';
-
 import {
   StickyNote,
-  StickyNoteListItem,
   STICKY_NOTE_WIDTH,
   STICKY_NOTE_HEIGHT
 } from './StickyNote';
-
 
 interface StickyNoteDragItem {
   id: string;
@@ -59,44 +56,24 @@ const ClearButton = styled.button`
 `;
 
 export const Canvas = () => {
-  const persistedStickyNotes = localStorage.getItem('stickyNotes');
   const {
     items,
     canvasWidth,
     canvasHeight,
     insertItemOnCanvas,
+    moveItemOverCanvas,
     removeItemFromCanvas,
     clearCanvas
-  } = useCanvas(persistedStickyNotes ? JSON.parse(persistedStickyNotes) : []);
+  } = useCanvas([]);
   const [, drop] = useDrop({
     accept: 'note',
-    canDrop: (item, monitor) => monitor.isOver({ shallow: true }),
+    canDrop: (_item, monitor) => monitor.isOver({ shallow: true }),
     drop: (item: StickyNoteDragItem, monitor: DropTargetMonitor) => {
       const initialPosition = monitor.getInitialSourceClientOffset();
       const dropPosition = monitor.getSourceClientOffset();
   
       if (dropPosition?.x && dropPosition?.y && initialPosition?.x && dropPosition.y) {
-        if (dropPosition.x > canvasWidth - STICKY_NOTE_WIDTH) {
-          setCanvasWidth(canvasWidth + STICKY_NOTE_WIDTH);
-        }
-    
-        if (dropPosition.y > canvasHeight - STICKY_NOTE_HEIGHT) {
-          setCanvasHeight(canvasHeight + STICKY_NOTE_HEIGHT);
-        }
-  
-        const newStickyNotesList = stickyNotes
-          .filter(stickyNote => stickyNote.id !== item.id);
-        const newStickyNote: StickyNoteListItem = {
-          id: `${dropPosition.x}${dropPosition.y}`,
-          text: item.text,
-          position: {
-            x: dropPosition.x,
-            y: dropPosition.y
-          },
-          backgroundColor: item.backgroundColor
-        };
-  
-        setStickyNotes([...newStickyNotesList, newStickyNote]);
+        moveItemOverCanvas(item.id, { x: dropPosition.x, y: dropPosition.y });
       }
     },
   });
@@ -106,7 +83,7 @@ export const Canvas = () => {
 
     if (hasCanvasBodyClass) {
       const newStickyNote: CanvasItem = {
-        id: `${e.pageX}${e.pageY}`,
+        id: `${items.length + 1}`,
         size: {
           width: STICKY_NOTE_WIDTH,
           height: STICKY_NOTE_HEIGHT
@@ -123,18 +100,6 @@ export const Canvas = () => {
       insertItemOnCanvas(newStickyNote);
     }
   };
-
-  useEffect(() => {
-    localStorage.setItem('stickyNotes', JSON.stringify(items));
-  }, [items]);
-
-  useEffect(() => {
-    localStorage.setItem('canvasWidth', JSON.stringify(items));
-  }, [items]);
-
-  useEffect(() => {
-    localStorage.setItem('canvasHeight', JSON.stringify(items));
-  }, [items]);
 
   return (
     <StyledCanvas width={canvasWidth} height={canvasHeight}>
